@@ -4,29 +4,42 @@ const mail = document.getElementById("mail");
 const password = document.getElementById("password");
 const loginbtn = document.getElementById("submitbtn");
 
-loginbtn.addEventListener("click", handlelogin);
+
+function authenticateUser(email, pass) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const user = finduserbymail(email, pass);
+            if (user) {
+                resolve(user);
+            } else {
+                reject("Identifiants incorrects ou utilisateur inexistant."); 
+            }
+        }, 2000);
+    });
+}
 
 function handlelogin() {
-    console.log("Login button clicked");
-    let mailInput = mail.value;
-    let passwordInput = password.value;
+    const mailInput = mail.value;
+    const passwordInput = password.value;
 
-    if (mailInput === "" || passwordInput === "") {
-        alert("Please fill in all fields");
+    if (!mailInput || !passwordInput) {
+        alert("Veuillez remplir tous les champs.");
         return;
     }
 
-    loginbtn.textContent = "Loading...";
+    loginbtn.textContent = "Chargement...";
+    loginbtn.disabled = true;
 
-    setTimeout(() => {
-        let user = finduserbymail(mailInput, passwordInput);
-
-        if (user) {
+    authenticateUser(mailInput, passwordInput)
+        .then((user) => {
             sessionStorage.setItem("connectedUser", JSON.stringify(user));
             document.location = "dashboard.html";
-        } else {
-            alert("User not found");
+        })
+        .catch((error) => {
+            alert(error);
             loginbtn.textContent = "Se connecter";
-        }
-    }, 2000);
+            loginbtn.disabled = false;
+        });
 }
+
+loginbtn.addEventListener("click", handlelogin);

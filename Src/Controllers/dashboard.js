@@ -84,6 +84,7 @@ function displayTransactions() {
 }
 
 // 4. ASYNCHRONOUS TRANSFER LOGIC
+/*
 function transfererArgent(cardNum, beneficiary, amount, onSuccess, onError) {
     // Step 1: Check Amount
     setTimeout(() => {
@@ -116,8 +117,44 @@ function transfererArgent(cardNum, beneficiary, amount, onSuccess, onError) {
         }, 1000);
     }, 1000);
 }
+*/
+// 4. ASYNCHRONOUS TRANSFER LOGIC (promises-newVersion)
+function transfererArgent(cardNum, beneficiary, amount) {
+    return new Promise((resolve, reject) => {
+        // Step 1: Check Amount
+        setTimeout(() => {
+            if (amount <= 0) return reject("Montant invalide.");
 
-// 5. EVENT LISTENERS
+            // Step 2: Check Solde
+            setTimeout(() => {
+                const card = connectedUser.wallet.cards.find(c => c.numcards === cardNum);
+                if (!card || Number(card.balance) < amount) return reject("Solde insuffisant.");
+
+                // Step 3: Check Beneficiary
+                setTimeout(() => {
+                    if (!beneficiary) return reject("Bénéficiaire manquant.");
+
+                    // Step 4: Finalize
+                    setTimeout(() => {
+                        card.balance = Number(card.balance) - amount;
+                        connectedUser.wallet.transactions.unshift({
+                            id: Date.now().toString(),
+                            type: "debit",
+                            amount: amount,
+                            date: new Date().toLocaleDateString(),
+                            to: beneficiary
+                        });
+
+                        sessionStorage.setItem("connectedUser", JSON.stringify(connectedUser));
+                        resolve("Transfert réussi !"); // Success!
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }, 1000);
+    });
+}
+
+// 5. EVENT LISTENERS 
 document.getElementById("quickTransfer").addEventListener("click", () => {
     document.getElementById("transfer-section").classList.remove("hidden");
 });
@@ -131,7 +168,7 @@ const closeTransfer = () => {
 document.getElementById("closeTransferBtn").addEventListener("click", closeTransfer);
 document.getElementById("cancelTransferBtn").addEventListener("click", closeTransfer);
 
-// Form Submit
+// Form Submit(callbacks-oldVersion)
 document.getElementById("transferForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const btn = document.getElementById("submitTransferBtn");
@@ -153,4 +190,27 @@ document.getElementById("transferForm").addEventListener("submit", (e) => {
             btn.textContent = "Transférer";
         }
     );
+});
+// Form Submit(promises-newVersion)
+document.getElementById("transferForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("submitTransferBtn");
+    const amt = Number(document.getElementById("amount").value);
+    const card = document.getElementById("sourceCard").value;
+    const bene = document.getElementById("beneficiary").value;
+
+    btn.disabled = true;
+    btn.textContent = "Chargement...";
+
+    // Use the Promise
+    transfererArgent(card, bene, amt)
+        .then((message) => {
+            alert(message);
+            location.reload(); 
+        })
+        .catch((err) => {
+            alert(err);
+            btn.disabled = false;
+            btn.textContent = "Transférer";
+        });
 });
