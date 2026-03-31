@@ -14,9 +14,26 @@ body {
   font-family: 'Inter', sans-serif;
   background: linear-gradient(to right, #f9dcee, #efdcf2);
   color: #333;
-  line-height: 1.6;
+  line-height: 1.6; 
+  /* ADD THESE THREE LINES */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; 
+  margin: 0;
+}
+/* If using a standard <main> tag or for your dashboard: */
+.dashboard-main {
+  background: #f6eaf7;
+  flex: 1; /* This pushes the footer to the bottom */
+  
+  /* You can keep your existing calc or remove it as flex: 1 is more dynamic */
+  min-height: calc(100vh - 70px - 60px); 
 }
 
+/* For your Landing Page hero section (if not on the dashboard) */
+.hero {
+  flex: 1; 
+}
 /* =====================
    HEADER / NAVBAR
 ===================== */

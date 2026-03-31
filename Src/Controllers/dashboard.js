@@ -8,14 +8,16 @@ const monthlyIncome = document.getElementById("monthlyIncome");
 const monthlyExpenses = document.getElementById("monthlyExpenses");
 const activeCards = document.getElementById("activeCards");
 const listContainer = document.getElementById("recentTransactionsList");
+const submitTransferBtn = document.getElementById("submitTransferBtn");
+const submitRechargerBtn = document.getElementById("submitRechargerBtn");
 
 // SECURITY CHECK
 if (!connectedUser) {
     document.location = "index.html"; 
 } else {
-    // START DASHBOARD
     updateDashboardStats();
     fillTransferMenus();
+    fillRechargerMenus();
     displayTransactions();
 }
 
@@ -23,17 +25,14 @@ if (!connectedUser) {
 function updateDashboardStats() {
     greetingName.textContent = connectedUser.name;
 
-    // Calculate Balance
     const total = connectedUser.wallet.cards.reduce((sum, c) => sum + Number(c.balance), 0);
     availableBalance.textContent = `${total.toLocaleString()} MAD`;
 
-    // Calculate Income (Credits)
     const totalIn = connectedUser.wallet.transactions
         .filter(t => t.type === "credit")
         .reduce((sum, t) => sum + Number(t.amount), 0);
     monthlyIncome.textContent = `${totalIn.toLocaleString()} MAD`;
 
-    // Calculate Expenses (Debits)
     const totalOut = connectedUser.wallet.transactions
         .filter(t => t.type === "debit")
         .reduce((sum, t) => sum + Number(t.amount), 0);
@@ -42,18 +41,16 @@ function updateDashboardStats() {
     if (activeCards) activeCards.textContent = connectedUser.wallet.cards.length;
 }
 
-// 3. UI HELPERS (Dropdowns & History)
+// 3. UI HELPERS
 function fillTransferMenus() {
     const cardSelect = document.getElementById("sourceCard");
     const beneSelect = document.getElementById("beneficiary");
 
-    // Fill Cards
     cardSelect.innerHTML = '<option value="" disabled selected>Sélectionner une carte</option>';
     connectedUser.wallet.cards.forEach(c => {
         cardSelect.innerHTML += `<option value="${c.numcards}">${c.type} (**** ${c.numcards.slice(-4)})</option>`;
     });
 
-    // Fill Beneficiaries
     beneSelect.innerHTML = `
         <option value="" disabled selected>Choisir un bénéficiaire</option>
         <option value="Fatima Zahra">Fatima Zahra</option>
@@ -68,9 +65,6 @@ function displayTransactions() {
         listContainer.innerHTML += `
             <div class="transaction-item">
                 <div class="transaction-info">
-                    <div class="transaction-icon ${isCredit ? 'green' : 'red'}">
-                        <i class="fas ${isCredit ? 'fa-arrow-up' : 'fa-arrow-down'}"></i>
-                    </div>
                     <div class="transaction-details">
                         <span class="transaction-name">${isCredit ? "De: " + t.from : "À: " + t.to}</span>
                         <span class="transaction-date">${t.date}</span>
@@ -83,58 +77,19 @@ function displayTransactions() {
     });
 }
 
-// 4. ASYNCHRONOUS TRANSFER LOGIC
-/*
-function transfererArgent(cardNum, beneficiary, amount, onSuccess, onError) {
-    // Step 1: Check Amount
-    setTimeout(() => {
-        if (amount <= 0) return onError("Montant invalide.");
-
-        // Step 2: Check Solde
-        setTimeout(() => {
-            const card = connectedUser.wallet.cards.find(c => c.numcards === cardNum);
-            if (!card || Number(card.balance) < amount) return onError("Solde insuffisant.");
-
-            // Step 3: Check Beneficiary
-            setTimeout(() => {
-                if (!beneficiary) return onError("Bénéficiaire manquant.");
-
-                // Step 4: Finalize
-                setTimeout(() => {
-                    card.balance = Number(card.balance) - amount;
-                    connectedUser.wallet.transactions.unshift({
-                        id: Date.now().toString(),
-                        type: "debit",
-                        amount: amount,
-                        date: new Date().toLocaleDateString(),
-                        to: beneficiary
-                    });
-
-                    sessionStorage.setItem("connectedUser", JSON.stringify(connectedUser));
-                    onSuccess();
-                }, 1000);
-            }, 1000);
-        }, 1000);
-    }, 1000);
-}
-*/
-// 4. ASYNCHRONOUS TRANSFER LOGIC (promises-newVersion)
+// 4. PROMISE-BASED TRANSFER
 function transfererArgent(cardNum, beneficiary, amount) {
     return new Promise((resolve, reject) => {
-        // Step 1: Check Amount
         setTimeout(() => {
             if (amount <= 0) return reject("Montant invalide.");
 
-            // Step 2: Check Solde
             setTimeout(() => {
                 const card = connectedUser.wallet.cards.find(c => c.numcards === cardNum);
                 if (!card || Number(card.balance) < amount) return reject("Solde insuffisant.");
 
-                // Step 3: Check Beneficiary
                 setTimeout(() => {
                     if (!beneficiary) return reject("Bénéficiaire manquant.");
 
-                    // Step 4: Finalize
                     setTimeout(() => {
                         card.balance = Number(card.balance) - amount;
                         connectedUser.wallet.transactions.unshift({
@@ -146,7 +101,7 @@ function transfererArgent(cardNum, beneficiary, amount) {
                         });
 
                         sessionStorage.setItem("connectedUser", JSON.stringify(connectedUser));
-                        resolve("Transfert réussi !"); // Success!
+                        resolve("Transfert réussi !");
                     }, 1000);
                 }, 1000);
             }, 1000);
@@ -154,63 +109,119 @@ function transfererArgent(cardNum, beneficiary, amount) {
     });
 }
 
-// 5. EVENT LISTENERS 
+// 5. EVENT LISTENERS
+//t
 document.getElementById("quickTransfer").addEventListener("click", () => {
     document.getElementById("transfer-section").classList.remove("hidden");
 });
-
-// Close / Annuler Logic
-const closeTransfer = () => {
+//r
+document.getElementById("quickTopup").addEventListener("click", () => {
+    document.getElementById("recharger-section").classList.remove("hidden");
+});
+//t
+const closeTransfer_t = () => {
     document.getElementById("transferForm").reset();
     document.getElementById("transfer-section").classList.add("hidden");
 };
+document.getElementById("closeTransferBtn").addEventListener("click", closeTransfer_t);
+document.getElementById("cancelTransferBtn").addEventListener("click", closeTransfer_t);
 
-document.getElementById("closeTransferBtn").addEventListener("click", closeTransfer);
-document.getElementById("cancelTransferBtn").addEventListener("click", closeTransfer);
+//r
+const closeTransfer_r = () => {
+    document.getElementById("rechargeForm").reset();
+    document.getElementById("recharger-section").classList.add("hidden");
+};
+document.getElementById("closeRechargerBtn").addEventListener("click", closeTransfer_r);
+document.getElementById("cancelRechargerBtn").addEventListener("click", closeTransfer_r);
 
-// Form Submit(callbacks-oldVersion)
+//t
 document.getElementById("transferForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    const btn = document.getElementById("submitTransferBtn");
     const amt = Number(document.getElementById("amount").value);
     const card = document.getElementById("sourceCard").value;
     const bene = document.getElementById("beneficiary").value;
 
-    btn.disabled = true;
-    btn.textContent = "Chargement...";
+    submitTransferBtn.disabled = true;
+    submitTransferBtn.textContent = "Chargement...";
 
-    transfererArgent(card, bene, amt, 
-        () => {
-            alert("Transfert réussi !");
-            location.reload(); 
-        }, 
-        (err) => {
-            alert(err);
-            btn.disabled = false;
-            btn.textContent = "Transférer";
-        }
-    );
-});
-// Form Submit(promises-newVersion)
-document.getElementById("transferForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const btn = document.getElementById("submitTransferBtn");
-    const amt = Number(document.getElementById("amount").value);
-    const card = document.getElementById("sourceCard").value;
-    const bene = document.getElementById("beneficiary").value;
-
-    btn.disabled = true;
-    btn.textContent = "Chargement...";
-
-    // Use the Promise
     transfererArgent(card, bene, amt)
         .then((message) => {
             alert(message);
-            location.reload(); 
+            updateDashboardStats();
+            displayTransactions();
+            closeTransfer_t();
         })
         .catch((err) => {
             alert(err);
-            btn.disabled = false;
-            btn.textContent = "Transférer";
+        })
+        .finally(() => {
+            submitTransferBtn.disabled = false;
+            submitTransferBtn.textContent = "Transférer";
         });
 });
+//r
+document.getElementById("rechargeForm").addEventListener("submit", (e) => {
+    e.preventDefault(); 
+
+    const amt = Number(document.getElementById("rechargeAmount").value);
+    const card = document.getElementById("rechargeSourceCard").value;
+    const submitBtn = document.getElementById("submitRechargerBtn");
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Chargement...";
+
+    rechargerArgent(card, amt) 
+        .then((message) => {
+            alert(message);
+            updateDashboardStats(); 
+            displayTransactions();  
+            closeTransfer_r();    
+        })
+        .catch((err) => {
+            alert(err);
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Recharger";
+        });
+});
+////////////////////////Recharger//////////////////////////////////
+function fillRechargerMenus() {
+    const rechargeCardSelect = document.getElementById("rechargeSourceCard");
+
+    rechargeCardSelect.innerHTML = '<option value="" disabled selected>Sélectionner une carte</option>';
+
+    connectedUser.wallet.cards.forEach(c => {
+        rechargeCardSelect.innerHTML += `
+            <option value="${c.numcards}">
+                ${c.type} (**** ${c.numcards.slice(-4)})
+            </option>`;
+    });
+}
+//rechargerArgent
+function rechargerArgent(cardNum, amount) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            if (amount <= 0) return reject("Montant invalide.");
+            if (!cardNum) return reject("Veuillez choisir une carte.");
+
+            const card = connectedUser.wallet.cards.find(c => c.numcards === cardNum);
+            
+            if (!card) return reject("Carte introuvable.");
+
+            card.balance = Number(card.balance) + amount;
+
+            connectedUser.wallet.transactions.unshift({
+                id: Date.now().toString(),
+                type: "credit",
+                amount: amount,
+                date: new Date().toLocaleDateString(),
+                from: "Auto-Recharge"
+            });
+
+            sessionStorage.setItem("connectedUser", JSON.stringify(connectedUser));
+
+            resolve("Recharge réussie !");
+        }, 1500); 
+    });
+}

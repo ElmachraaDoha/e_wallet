@@ -1,9 +1,8 @@
-import finduserbymail from "../Model/database.js";
+import finduserbymail  from "../Model/database.js";
 
 const mail = document.getElementById("mail");
 const password = document.getElementById("password");
 const loginbtn = document.getElementById("submitbtn");
-
 
 function authenticateUser(email, pass) {
     return new Promise((resolve, reject) => {

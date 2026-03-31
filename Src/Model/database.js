@@ -28,5 +28,4 @@ const finduserbymail=(mail,password)=>{
     );
 }
 
-
 export default finduserbymail;
