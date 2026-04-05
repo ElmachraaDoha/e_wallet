@@ -1,7 +1,6 @@
-// 1. DATA INITIALIZATION
+//nouveau version using async function & await 
 const connectedUser = JSON.parse(sessionStorage.getItem("connectedUser"));
 
-// DOM Elements
 const greetingName = document.getElementById("greetingName");
 const availableBalance = document.getElementById("availableBalance");
 const monthlyIncome = document.getElementById("monthlyIncome");
@@ -11,7 +10,6 @@ const listContainer = document.getElementById("recentTransactionsList");
 const submitTransferBtn = document.getElementById("submitTransferBtn");
 const submitRechargerBtn = document.getElementById("submitRechargerBtn");
 
-// SECURITY CHECK
 if (!connectedUser) {
     document.location = "index.html"; 
 } else {
@@ -21,7 +19,6 @@ if (!connectedUser) {
     displayTransactions();
 }
 
-// 2. CALCULATIONS & STATS
 function updateDashboardStats() {
     greetingName.textContent = connectedUser.name;
 
@@ -41,7 +38,6 @@ function updateDashboardStats() {
     if (activeCards) activeCards.textContent = connectedUser.wallet.cards.length;
 }
 
-// 3. UI HELPERS
 function fillTransferMenus() {
     const cardSelect = document.getElementById("sourceCard");
     const beneSelect = document.getElementById("beneficiary");
@@ -77,40 +73,33 @@ function displayTransactions() {
     });
 }
 
-// 4. PROMISE-BASED TRANSFER
-function transfererArgent(cardNum, beneficiary, amount) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            if (amount <= 0) return reject("Montant invalide.");
+async function transfererArgent(cardNum, beneficiary, amount) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (amount <= 0) throw "Montant invalide.";
 
-            setTimeout(() => {
-                const card = connectedUser.wallet.cards.find(c => c.numcards === cardNum);
-                if (!card || Number(card.balance) < amount) return reject("Solde insuffisant.");
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const card = connectedUser.wallet.cards.find(c => c.numcards === cardNum);
+    if (!card || Number(card.balance) < amount) throw "Solde insuffisant.";
 
-                setTimeout(() => {
-                    if (!beneficiary) return reject("Bénéficiaire manquant.");
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!beneficiary) throw "Bénéficiaire manquant.";
 
-                    setTimeout(() => {
-                        card.balance = Number(card.balance) - amount;
-                        connectedUser.wallet.transactions.unshift({
-                            id: Date.now().toString(),
-                            type: "debit",
-                            amount: amount,
-                            date: new Date().toLocaleDateString(),
-                            to: beneficiary
-                        });
-
-                        sessionStorage.setItem("connectedUser", JSON.stringify(connectedUser));
-                        resolve("Transfert réussi !");
-                    }, 1000);
-                }, 1000);
-            }, 1000);
-        }, 1000);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    card.balance = Number(card.balance) - amount;
+    
+    connectedUser.wallet.transactions.unshift({
+        id: Date.now().toString(),
+        type: "debit",
+        amount: amount,
+        date: new Date().toLocaleDateString(),
+        to: beneficiary
     });
+
+    sessionStorage.setItem("connectedUser", JSON.stringify(connectedUser));
+    return "Transfert réussi !";
 }
 
-// 5. EVENT LISTENERS
-//t
+//  EVENT LISTENERS
 document.getElementById("quickTransfer").addEventListener("click", () => {
     document.getElementById("transfer-section").classList.remove("hidden");
 });
@@ -135,7 +124,7 @@ document.getElementById("closeRechargerBtn").addEventListener("click", closeTran
 document.getElementById("cancelRechargerBtn").addEventListener("click", closeTransfer_r);
 
 //t
-document.getElementById("transferForm").addEventListener("submit", (e) => {
+document.getElementById("transferForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const amt = Number(document.getElementById("amount").value);
     const card = document.getElementById("sourceCard").value;
@@ -144,48 +133,44 @@ document.getElementById("transferForm").addEventListener("submit", (e) => {
     submitTransferBtn.disabled = true;
     submitTransferBtn.textContent = "Chargement...";
 
-    transfererArgent(card, bene, amt)
-        .then((message) => {
-            alert(message);
-            updateDashboardStats();
-            displayTransactions();
-            closeTransfer_t();
-        })
-        .catch((err) => {
-            alert(err);
-        })
-        .finally(() => {
-            submitTransferBtn.disabled = false;
-            submitTransferBtn.textContent = "Transférer";
-        });
+    try {
+        const message = await transfererArgent(card, bene, amt);
+        alert(message);
+        updateDashboardStats();
+        displayTransactions();
+        closeTransfer_t();
+    } catch (err) {
+        alert(err);
+    } finally {
+        submitTransferBtn.disabled = false;
+        submitTransferBtn.textContent = "Transférer";
+    }
 });
+
 //r
-document.getElementById("rechargeForm").addEventListener("submit", (e) => {
+document.getElementById("rechargeForm").addEventListener("submit", async (e) => {
     e.preventDefault(); 
 
     const amt = Number(document.getElementById("rechargeAmount").value);
     const card = document.getElementById("rechargeSourceCard").value;
-    const submitBtn = document.getElementById("submitRechargerBtn");
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Chargement...";
+    submitRechargerBtn.disabled = true;
+    submitRechargerBtn.textContent = "Chargement...";
 
-    rechargerArgent(card, amt) 
-        .then((message) => {
-            alert(message);
-            updateDashboardStats(); 
-            displayTransactions();  
-            closeTransfer_r();    
-        })
-        .catch((err) => {
-            alert(err);
-        })
-        .finally(() => {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Recharger";
-        });
+    try {
+        const message = await rechargerArgent(card, amt);
+        alert(message);
+        updateDashboardStats(); 
+        displayTransactions();  
+        closeTransfer_r();    
+    } catch (err) {
+        alert(err);
+    } finally {
+        submitRechargerBtn.disabled = false;
+        submitRechargerBtn.textContent = "Recharger";
+    }
 });
-////////////////////////Recharger//////////////////////////////////
+
 function fillRechargerMenus() {
     const rechargeCardSelect = document.getElementById("rechargeSourceCard");
 
@@ -199,29 +184,26 @@ function fillRechargerMenus() {
     });
 }
 //rechargerArgent
-function rechargerArgent(cardNum, amount) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            if (amount <= 0) return reject("Montant invalide.");
-            if (!cardNum) return reject("Veuillez choisir une carte.");
+async function rechargerArgent(cardNum, amount) {
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-            const card = connectedUser.wallet.cards.find(c => c.numcards === cardNum);
-            
-            if (!card) return reject("Carte introuvable.");
+    if (amount <= 0) throw "Montant invalide.";
+    if (!cardNum) throw "Veuillez choisir une carte.";
 
-            card.balance = Number(card.balance) + amount;
+    const card = connectedUser.wallet.cards.find(c => c.numcards === cardNum);
 
-            connectedUser.wallet.transactions.unshift({
-                id: Date.now().toString(),
-                type: "credit",
-                amount: amount,
-                date: new Date().toLocaleDateString(),
-                from: "Auto-Recharge"
-            });
+    if (!card) throw "Carte introuvable.";
 
-            sessionStorage.setItem("connectedUser", JSON.stringify(connectedUser));
+    card.balance = Number(card.balance) + amount;
 
-            resolve("Recharge réussie !");
-        }, 1500); 
+    connectedUser.wallet.transactions.unshift({
+        id: Date.now().toString(),
+        type: "credit",
+        amount: amount,
+        date: new Date().toLocaleDateString(),
+        from: "Auto-Recharge"
     });
+
+    sessionStorage.setItem("connectedUser", JSON.stringify(connectedUser));
+    return "Recharge réussie !";
 }

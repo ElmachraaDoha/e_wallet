@@ -4,20 +4,19 @@ const mail = document.getElementById("mail");
 const password = document.getElementById("password");
 const loginbtn = document.getElementById("submitbtn");
 
-function authenticateUser(email, pass) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const user = finduserbymail(email, pass);
-            if (user) {
-                resolve(user);
-            } else {
-                reject("Identifiants incorrects ou utilisateur inexistant."); 
-            }
-        }, 2000);
-    });
+async function authenticateUser(email, pass) {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const user = finduserbymail(email, pass);
+
+    if (user) {
+        return user; 
+    } else {
+        throw "Identifiants incorrects ou utilisateur inexistant."; 
+    }
 }
 
-function handlelogin() {
+async function handlelogin() {
     const mailInput = mail.value;
     const passwordInput = password.value;
 
@@ -29,16 +28,17 @@ function handlelogin() {
     loginbtn.textContent = "Chargement...";
     loginbtn.disabled = true;
 
-    authenticateUser(mailInput, passwordInput)
-        .then((user) => {
-            sessionStorage.setItem("connectedUser", JSON.stringify(user));
-            document.location = "dashboard.html";
-        })
-        .catch((error) => {
-            alert(error);
-            loginbtn.textContent = "Se connecter";
-            loginbtn.disabled = false;
-        });
+    try {
+        const user = await authenticateUser(mailInput, passwordInput);
+
+        sessionStorage.setItem("connectedUser", JSON.stringify(user));
+        document.location = "dashboard.html";
+
+    } catch (error) {
+        alert(error);
+        loginbtn.textContent = "Se connecter";
+        loginbtn.disabled = false;
+    }
 }
 
 loginbtn.addEventListener("click", handlelogin);
